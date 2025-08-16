@@ -5,7 +5,6 @@ const BASE_URL = 'https://api.coingecko.com/api/v3';
 class CoinGeckoApi {
   private async request<T>(endpoint: string, retries = 3): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    console.log(`Making API request to: ${url}`);
     
     try {
       const response = await fetch(url, {
@@ -16,20 +15,15 @@ class CoinGeckoApi {
         mode: 'cors'
       });
       
-      console.log(`API response status: ${response.status} for ${endpoint}`);
-      
       if (!response.ok) {
         throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log(`API response received for ${endpoint}`, data ? 'Data received' : 'No data');
-      return data;
+      return response.json();
     } catch (error) {
       console.error(`API request failed for ${endpoint}:`, error);
       
       if (retries > 0 && (error instanceof TypeError || (error instanceof Error && error.message.includes('fetch')))) {
-        console.log(`Retrying API request (${retries} attempts left)...`);
         await new Promise(resolve => setTimeout(resolve, 1000));
         return this.request<T>(endpoint, retries - 1);
       }
