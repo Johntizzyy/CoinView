@@ -28,22 +28,22 @@ export function Navbar() {
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
             <Link href="/">
-              <a className={`font-medium transition-colors ${
+              <span className={`font-medium transition-colors cursor-pointer ${
                 isActive("/") 
                   ? "text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400 pb-1"
                   : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
               }`}>
                 Markets
-              </a>
+              </span>
             </Link>
             <Link href="/watchlist">
-              <a className={`font-medium transition-colors ${
+              <span className={`font-medium transition-colors cursor-pointer ${
                 isActive("/watchlist")
                   ? "text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400 pb-1"
                   : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
               }`}>
                 Watchlist
-              </a>
+              </span>
             </Link>
           </div>
 
@@ -78,22 +78,22 @@ export function Navbar() {
           <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4">
             <div className="flex flex-col space-y-4">
               <Link href="/">
-                <a className={`font-medium transition-colors ${
+                <span className={`font-medium transition-colors cursor-pointer ${
                   isActive("/") 
                     ? "text-primary-600 dark:text-primary-400"
                     : "text-gray-600 dark:text-gray-300"
                 }`} onClick={() => setMobileMenuOpen(false)}>
                   Markets
-                </a>
+                </span>
               </Link>
               <Link href="/watchlist">
-                <a className={`font-medium transition-colors ${
+                <span className={`font-medium transition-colors cursor-pointer ${
                   isActive("/watchlist")
                     ? "text-primary-600 dark:text-primary-400"
                     : "text-gray-600 dark:text-gray-300"
                 }`} onClick={() => setMobileMenuOpen(false)}>
                   Watchlist
-                </a>
+                </span>
               </Link>
             </div>
           </div>
