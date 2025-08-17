@@ -1,0 +1,705 @@
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoPulse - Crypto Price Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#EEF2FF',
+                            500: '#4F46E5',
+                            600: '#4338CA',
+                            700: '#3730A3',
+                        }
+                    }
+                }
+            },
+            darkMode: 'class'
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .crypto-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .number-font {
+            font-variant-numeric: tabular-nums;
+        }
+        .chart-container {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+
+<!-- @COMPONENT: Navbar -->
+<nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <!-- Logo and Brand -->
+            <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 crypto-gradient rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-sm"></i>
+                    </div>
+                </div>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-white">CryptoPulse</h1>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-primary-600 dark:text-primary-400 font-medium border-b-2 border-primary-600 dark:border-primary-400 pb-1" data-bind="activeRoute">Markets</a>
+                <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" data-event="click:navigateToWatchlist">Watchlist</a>
+                <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">Portfolio</a>
+            </div>
+
+            <!-- Theme Toggle and Mobile Menu -->
+            <div class="flex items-center space-x-4">
+                <button class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" data-event="click:toggleTheme">
+                    <i class="fas fa-sun text-yellow-500 dark:hidden"></i>
+                    <i class="fas fa-moon text-gray-400 hidden dark:block"></i>
+                </button>
+                <button class="md:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
+                    <i class="fas fa-bars text-gray-600 dark:text-gray-300"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- @END_COMPONENT: Navbar -->
+
+<!-- Main Content Container -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- @COMPONENT: SearchAndFilters -->
+    <div class="mb-8">
+        <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div class="flex-1 max-w-md">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" placeholder="Search cryptocurrencies..." 
+                           class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                           data-bind="searchQuery" data-event="input:handleSearch">
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <select class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary-500" data-bind="sortBy">
+                    <option>Market Cap</option>
+                    <option>Price</option>
+                    <option>24h Change</option>
+                    <option>Volume</option>
+                </select>
+                <button class="px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2" data-event="click:refreshData">
+                    <i class="fas fa-sync-alt"></i>
+                    <span class="hidden sm:inline">Refresh</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: SearchAndFilters -->
+
+    <!-- @COMPONENT: MarketStats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Market Cap</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white number-font" data-bind="totalMarketCap">$2.1T</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chart-pie text-blue-600 dark:text-blue-400"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center">
+                <span class="text-green-600 dark:text-green-400 text-sm font-medium flex items-center">
+                    <i class="fas fa-arrow-up text-xs mr-1"></i>
+                    2.4%
+                </span>
+                <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">24h</span>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">24h Volume</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white number-font" data-bind="totalVolume">$89.2B</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-exchange-alt text-green-600 dark:text-green-400"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center">
+                <span class="text-red-600 dark:text-red-400 text-sm font-medium flex items-center">
+                    <i class="fas fa-arrow-down text-xs mr-1"></i>
+                    1.2%
+                </span>
+                <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">24h</span>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">BTC Dominance</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white number-font" data-bind="btcDominance">52.8%</p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+                    <i class="fab fa-bitcoin text-orange-600 dark:text-orange-400"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center">
+                <span class="text-green-600 dark:text-green-400 text-sm font-medium flex items-center">
+                    <i class="fas fa-arrow-up text-xs mr-1"></i>
+                    0.3%
+                </span>
+                <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">24h</span>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Coins</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white number-font" data-bind="activeCryptocurrencies">13,247</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-coins text-purple-600 dark:text-purple-400"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center">
+                <span class="text-green-600 dark:text-green-400 text-sm font-medium flex items-center">
+                    <i class="fas fa-arrow-up text-xs mr-1"></i>
+                    47
+                </span>
+                <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">new</span>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: MarketStats -->
+
+    <!-- @COMPONENT: CoinTable -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Cryptocurrency Prices</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Top cryptocurrencies by market cap</p>
+        </div>
+
+        <!-- Table Header -->
+        <div class="hidden lg:grid lg:grid-cols-12 gap-4 px-6 py-3 bg-gray-50 dark:bg-gray-750 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <div class="col-span-1">#</div>
+            <div class="col-span-3">Coin</div>
+            <div class="col-span-2 text-right">Price</div>
+            <div class="col-span-2 text-right">24h %</div>
+            <div class="col-span-2 text-right">Market Cap</div>
+            <div class="col-span-2 text-right">Volume (24h)</div>
+        </div>
+
+        <!-- @MAP: coins.map(coin => ( -->
+        <!-- Coin Row 1 - Bitcoin -->
+        <div class="lg:grid lg:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer" data-event="click:navigateToCoin" data-bind="coin.id">
+            <div class="lg:col-span-1 flex lg:block items-center lg:items-start">
+                <span class="text-sm font-medium text-gray-900 dark:text-white number-font">1</span>
+                <button class="ml-auto lg:ml-0 lg:mt-2 text-gray-400 hover:text-yellow-500 transition-colors" data-event="click:toggleWatchlist">
+                    <i class="far fa-star"></i>
+                </button>
+            </div>
+            
+            <div class="lg:col-span-3 flex items-center space-x-3 mt-2 lg:mt-0">
+                <!-- High quality Bitcoin logo from Unsplash -->
+                <img src="https://pixabay.com/get/g401b2eddba422c45aa26062723fa374a3e398b8117723f23d8eb5e4ec32e93e8ee9bff6eb44ef05db8350c92109756e33be512354eeeff4dfc5eff0039340ef3_1280.jpg" 
+                     alt="Bitcoin logo" class="w-8 h-8 rounded-full" data-mock-image="true" data-implementation="Use coin.image from API">
+                <div>
+                    <div class="font-medium text-gray-900 dark:text-white" data-bind="coin.name">Bitcoin</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 uppercase" data-bind="coin.symbol">BTC</div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-2 lg:mt-0">
+                <div class="text-lg font-semibold text-gray-900 dark:text-white number-font" data-bind="coin.current_price">$43,527.89</div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" data-bind="coin.price_change_percentage_24h">
+                    <i class="fas fa-arrow-up text-xs mr-1"></i>
+                    +2.47%
+                </span>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <div class="text-sm font-medium text-gray-900 dark:text-white number-font" data-bind="coin.market_cap">$851.2B</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">MCap</div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <div class="text-sm font-medium text-gray-900 dark:text-white number-font" data-bind="coin.total_volume">$18.9B</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Volume</div>
+            </div>
+        </div>
+
+        <!-- Coin Row 2 - Ethereum -->
+        <div class="lg:grid lg:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer" data-event="click:navigateToCoin">
+            <div class="lg:col-span-1 flex lg:block items-center lg:items-start">
+                <span class="text-sm font-medium text-gray-900 dark:text-white number-font">2</span>
+                <button class="ml-auto lg:ml-0 lg:mt-2 text-yellow-500" data-event="click:toggleWatchlist">
+                    <i class="fas fa-star"></i>
+                </button>
+            </div>
+            
+            <div class="lg:col-span-3 flex items-center space-x-3 mt-2 lg:mt-0">
+                <!-- High quality Ethereum logo -->
+                <img src="https://images.unsplash.com/photo-1640161704729-cbe966a08476?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=40&h=40" 
+                     alt="Ethereum logo" class="w-8 h-8 rounded-full">
+                <div>
+                    <div class="font-medium text-gray-900 dark:text-white">Ethereum</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 uppercase">ETH</div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-2 lg:mt-0">
+                <div class="text-lg font-semibold text-gray-900 dark:text-white number-font">$2,678.34</div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                    <i class="fas fa-arrow-down text-xs mr-1"></i>
+                    -1.23%
+                </span>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <div class="text-sm font-medium text-gray-900 dark:text-white number-font">$321.8B</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">MCap</div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <div class="text-sm font-medium text-gray-900 dark:text-white number-font">$12.4B</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Volume</div>
+            </div>
+        </div>
+
+        <!-- Coin Row 3 - Tether -->
+        <div class="lg:grid lg:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer" data-event="click:navigateToCoin">
+            <div class="lg:col-span-1 flex lg:block items-center lg:items-start">
+                <span class="text-sm font-medium text-gray-900 dark:text-white number-font">3</span>
+                <button class="ml-auto lg:ml-0 lg:mt-2 text-gray-400 hover:text-yellow-500 transition-colors" data-event="click:toggleWatchlist">
+                    <i class="far fa-star"></i>
+                </button>
+            </div>
+            
+            <div class="lg:col-span-3 flex items-center space-x-3 mt-2 lg:mt-0">
+                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <span class="text-white text-xs font-bold">₮</span>
+                </div>
+                <div>
+                    <div class="font-medium text-gray-900 dark:text-white">Tether</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 uppercase">USDT</div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-2 lg:mt-0">
+                <div class="text-lg font-semibold text-gray-900 dark:text-white number-font">$1.00</div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                    +0.01%
+                </span>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <div class="text-sm font-medium text-gray-900 dark:text-white number-font">$91.3B</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">MCap</div>
+            </div>
+
+            <div class="lg:col-span-2 lg:text-right mt-1 lg:mt-0">
+                <div class="text-sm font-medium text-gray-900 dark:text-white number-font">$28.7B</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Volume</div>
+            </div>
+        </div>
+
+        <!-- Additional Coin Rows (showing loading state) -->
+        <div class="lg:grid lg:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700" data-mock="true">
+            <div class="lg:col-span-1">
+                <div class="w-6 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            </div>
+            <div class="lg:col-span-3 flex items-center space-x-3">
+                <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                <div class="space-y-2">
+                    <div class="w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div class="w-8 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 lg:text-right">
+                <div class="w-24 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
+            </div>
+            <div class="lg:col-span-2 lg:text-right">
+                <div class="w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
+            </div>
+            <div class="lg:col-span-2 lg:text-right">
+                <div class="w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
+            </div>
+            <div class="lg:col-span-2 lg:text-right">
+                <div class="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
+            </div>
+        </div>
+        <!-- @END_MAP )) -->
+
+    </div>
+    <!-- @END_COMPONENT: CoinTable -->
+
+    <!-- @COMPONENT: Pagination -->
+    <div class="flex items-center justify-between mt-8">
+        <div class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+            <span>Showing</span>
+            <span class="font-medium number-font" data-bind="paginationInfo.start">1</span>
+            <span>to</span>
+            <span class="font-medium number-font" data-bind="paginationInfo.end">25</span>
+            <span>of</span>
+            <span class="font-medium number-font" data-bind="paginationInfo.total">50</span>
+            <span>cryptocurrencies</span>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button class="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" 
+                    data-event="click:previousPage" disabled>
+                <i class="fas fa-chevron-left text-xs mr-2"></i>
+                Previous
+            </button>
+            <div class="flex items-center space-x-1">
+                <button class="w-8 h-8 text-sm bg-primary-600 text-white rounded-lg" data-bind="currentPage">1</button>
+                <button class="w-8 h-8 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-event="click:goToPage">2</button>
+                <span class="px-2 text-gray-500">...</span>
+                <button class="w-8 h-8 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">10</button>
+            </div>
+            <button class="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
+                    data-event="click:nextPage">
+                Next
+                <i class="fas fa-chevron-right text-xs ml-2"></i>
+            </button>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: Pagination -->
+
+</main>
+
+<!-- @COMPONENT: CoinDetailModal (Hidden by default) -->
+<div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" id="coinDetailModal" data-bind="showCoinDetail">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center space-x-4">
+                    <!-- Colorful Bitcoin chart visualization -->
+                    <img src="https://images.unsplash.com/photo-1640161704729-cbe966a08476?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=48&h=48" 
+                         alt="Bitcoin logo" class="w-12 h-12 rounded-full">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white" data-bind="selectedCoin.name">Bitcoin</h2>
+                        <p class="text-gray-600 dark:text-gray-400 uppercase" data-bind="selectedCoin.symbol">BTC</p>
+                    </div>
+                </div>
+                <button class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" data-event="click:closeCoinDetail">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6">
+                <!-- Price and Basic Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="text-center md:text-left">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Price</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white number-font" data-bind="selectedCoin.current_price">$43,527.89</p>
+                        <div class="flex items-center justify-center md:justify-start mt-2">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                <i class="fas fa-arrow-up text-xs mr-1"></i>
+                                +2.47%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Market Cap Rank</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white number-font">#1</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">$851.2B Market Cap</p>
+                    </div>
+                    <div class="text-center md:text-right">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">24h Volume</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white number-font">$18.9B</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">High: $44,120</p>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Price Chart</h3>
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1 text-sm bg-primary-600 text-white rounded-lg" data-event="click:setChartPeriod" data-period="24h">24H</button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg" data-event="click:setChartPeriod" data-period="7d">7D</button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg" data-event="click:setChartPeriod" data-period="30d">30D</button>
+                        </div>
+                    </div>
+                    <div class="chart-container rounded-xl p-6 h-64 flex items-center justify-center">
+                        <!-- Placeholder for Recharts/Chart.js integration -->
+                        <!-- Modern crypto price chart visualization -->
+                        <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=300" 
+                             alt="Bitcoin price chart showing upward trend" class="rounded-lg w-full h-full object-cover opacity-75" data-mock-image="true" data-implementation="Replace with Recharts Line Chart component">
+                        <!-- @FUNCTIONALITY: This chart should implement historical price data using Recharts with responsive design -->
+                    </div>
+                </div>
+
+                <!-- Additional Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4">
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">All-Time High</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white number-font">$69,045</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4">
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">All-Time Low</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white number-font">$67.81</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4">
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Circulating Supply</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white number-font">19.6M BTC</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4">
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Max Supply</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white number-font">21M BTC</p>
+                    </div>
+                </div>
+
+                <!-- External Links -->
+                <div class="flex flex-wrap gap-3">
+                    <a href="#" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" data-bind="selectedCoin.homepage">
+                        <i class="fas fa-globe text-sm mr-2"></i>
+                        Website
+                    </a>
+                    <a href="#" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fab fa-github text-sm mr-2"></i>
+                        GitHub
+                    </a>
+                    <a href="#" class="inline-flex items-center px-4 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors">
+                        <i class="fab fa-twitter text-sm mr-2"></i>
+                        Twitter
+                    </a>
+                    <button class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors" data-event="click:toggleWatchlist">
+                        <i class="fas fa-star text-sm mr-2"></i>
+                        Add to Watchlist
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- @END_COMPONENT: CoinDetailModal -->
+
+<!-- @COMPONENT: WatchlistPage (Hidden by default) -->
+<div class="hidden" id="watchlistPage" data-bind="showWatchlist">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Watchlist</h1>
+            <p class="text-gray-600 dark:text-gray-400">Track your favorite cryptocurrencies</p>
+        </div>
+
+        <!-- Empty State -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-12 text-center border border-gray-200 dark:border-gray-700" data-bind="watchlistEmpty">
+            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-star text-2xl text-gray-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No cryptocurrencies in your watchlist</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-6">Start adding cryptocurrencies to track their performance</p>
+            <button class="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors" data-event="click:goToMarkets">
+                Browse Cryptocurrencies
+            </button>
+        </div>
+
+        <!-- Watchlist Items -->
+        <div class="hidden space-y-4" data-bind="watchlistItems">
+            <!-- @MAP: watchlistCoins.map(coin => ( -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="https://images.unsplash.com/photo-1621557746824-97a69f9dcb5b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=48&h=48" 
+                         alt="Bitcoin logo" class="w-12 h-12 rounded-full">
+                    <div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Bitcoin</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 uppercase">BTC</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-lg font-semibold text-gray-900 dark:text-white number-font">$43,527.89</p>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        <i class="fas fa-arrow-up text-xs mr-1"></i>
+                        +2.47%
+                    </span>
+                </div>
+                <button class="p-2 text-red-500 hover:text-red-700 transition-colors" data-event="click:removeFromWatchlist">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <!-- @END_MAP )) -->
+        </div>
+    </main>
+</div>
+<!-- @END_COMPONENT: WatchlistPage -->
+
+<!-- @COMPONENT: LoadingSpinner -->
+<div class="hidden fixed inset-0 bg-black bg-opacity-25 z-50 flex items-center justify-center" id="loadingSpinner" data-bind="isLoading">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-2xl">
+        <div class="flex items-center space-x-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <p class="text-gray-900 dark:text-white font-medium">Loading cryptocurrencies...</p>
+        </div>
+    </div>
+</div>
+<!-- @END_COMPONENT: LoadingSpinner -->
+
+<!-- @COMPONENT: ErrorMessage -->
+<div class="hidden fixed bottom-4 right-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-6 py-4 rounded-lg shadow-lg z-50" id="errorMessage" data-bind="errorState">
+    <div class="flex items-center space-x-3">
+        <i class="fas fa-exclamation-triangle text-red-500"></i>
+        <div>
+            <p class="font-medium">Error loading data</p>
+            <p class="text-sm" data-bind="errorMessage">Failed to fetch cryptocurrency data. Please try again.</p>
+        </div>
+        <button class="ml-4 text-red-500 hover:text-red-700" data-event="click:dismissError">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+<!-- @END_COMPONENT: ErrorMessage -->
+
+<script>
+(function() {
+    // Theme toggle functionality
+    const themeToggle = document.querySelector('[data-event="click:toggleTheme"]');
+    const html = document.documentElement;
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    html.className = savedTheme;
+    
+    themeToggle?.addEventListener('click', () => {
+        const currentTheme = html.className;
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        html.className = newTheme;
+        localStorage.setItem('theme', newTheme);
+    });
+
+    // Mock navigation functionality
+    const coinRows = document.querySelectorAll('[data-event="click:navigateToCoin"]');
+    const coinModal = document.getElementById('coinDetailModal');
+    const watchlistPage = document.getElementById('watchlistPage');
+    const mainContent = document.querySelector('main');
+
+    coinRows.forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('[data-event="click:toggleWatchlist"]')) {
+                return; // Don't open modal if clicking star
+            }
+            coinModal?.classList.remove('hidden');
+        });
+    });
+
+    // Close modal functionality
+    document.querySelector('[data-event="click:closeCoinDetail"]')?.addEventListener('click', () => {
+        coinModal?.classList.add('hidden');
+    });
+
+    // Watchlist toggle functionality
+    document.querySelectorAll('[data-event="click:toggleWatchlist"]').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const icon = button.querySelector('i');
+            if (icon.classList.contains('far')) {
+                icon.className = 'fas fa-star';
+                button.classList.add('text-yellow-500');
+                button.classList.remove('text-gray-400');
+            } else {
+                icon.className = 'far fa-star';
+                button.classList.remove('text-yellow-500');
+                button.classList.add('text-gray-400');
+            }
+            // TODO: Implement localStorage watchlist management
+        });
+    });
+
+    // Search functionality
+    document.querySelector('[data-event="input:handleSearch"]')?.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        // TODO: Implement search filtering logic
+        console.log('Searching for:', searchTerm);
+    });
+
+    // Pagination functionality
+    document.querySelector('[data-event="click:nextPage"]')?.addEventListener('click', () => {
+        // TODO: Implement pagination logic
+        console.log('Navigate to next page');
+    });
+
+    document.querySelector('[data-event="click:previousPage"]')?.addEventListener('click', () => {
+        // TODO: Implement pagination logic
+        console.log('Navigate to previous page');
+    });
+
+    // Chart period toggle
+    document.querySelectorAll('[data-event="click:setChartPeriod"]').forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active state from all buttons
+            document.querySelectorAll('[data-event="click:setChartPeriod"]').forEach(btn => {
+                btn.className = 'px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg';
+            });
+            // Add active state to clicked button
+            button.className = 'px-3 py-1 text-sm bg-primary-600 text-white rounded-lg';
+            // TODO: Implement chart data fetching for selected period
+        });
+    });
+
+    // Refresh data functionality
+    document.querySelector('[data-event="click:refreshData"]')?.addEventListener('click', () => {
+        const spinner = document.getElementById('loadingSpinner');
+        spinner?.classList.remove('hidden');
+        
+        // Simulate API call
+        setTimeout(() => {
+            spinner?.classList.add('hidden');
+            // TODO: Implement actual API refresh logic
+        }, 2000);
+    });
+
+    // Mock error handling
+    window.showError = function(message) {
+        const errorElement = document.getElementById('errorMessage');
+        if (errorElement) {
+            errorElement.querySelector('[data-bind="errorMessage"]').textContent = message;
+            errorElement.classList.remove('hidden');
+            setTimeout(() => {
+                errorElement.classList.add('hidden');
+            }, 5000);
+        }
+    };
+
+    // Dismiss error
+    document.querySelector('[data-event="click:dismissError"]')?.addEventListener('click', () => {
+        document.getElementById('errorMessage')?.classList.add('hidden');
+    });
+
+    // TODO: Implement CoinGecko API integration
+    // TODO: Implement React Router navigation
+    // TODO: Implement Framer Motion animations
+    // TODO: Implement Recharts integration
+    // TODO: Implement complete state management
+})();
+</script>
+
+</body>
+</html>
