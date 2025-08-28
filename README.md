@@ -31,3 +31,29 @@ Recharts / Chart.js → price history charts
 Framer Motion → animations
 
 CoinGecko API → real-time crypto data
+
+## Running locally
+
+```bash
+npm install
+npm run dev
+```
+
+## Deploying to Vercel
+
+1. Build the client:
+
+```bash
+npm run build
+```
+
+2. Push to a Git repo and import the project in Vercel.
+
+Vercel will:
+
+- Install dependencies
+- Run `npm run build` (outputs to `dist/public`)
+- Serve API at `/api` using `api/index.ts`
+- Serve static site from `dist/public`
+
+Configure any environment variables in Vercel Project Settings.
